@@ -33,6 +33,9 @@ cat << EOF | column -L -t -s '|' -N OPTION,DESCRIPTION -W DESCRIPTION
 -n, --libvirt-network NETWORK|The libvirt network to use. Select this option if you want to use an existing libvirt network.
 |By default the existing libvirt network used by the cluster will be used.
 
+-r --role ROLE|Node role can be 'master' or 'worker'
+|By default the value is "worker"
+
 EOF
 
 }
@@ -90,6 +93,11 @@ case $key in
     shift
     shift
     ;;
+    -r|--role)
+    ROLE="$2"
+    shift
+    shift
+    ;;
     -v|--vm-dir)
     VM_DIR="$2"
     shift
@@ -109,6 +117,7 @@ test -z "$NODE" && err "Please specify the node name using --name <node-name>" \
                        "see --help for more details"
 test -z "$CPU" && CPU="2"
 test -z "$MEM" && MEM="4096"
+test -z "$ROLE" && ROLE="worker"
 
 # Checking if we are root
 test "$(whoami)" = "root" || err "Not running as root"
@@ -157,7 +166,7 @@ echo -n "====> Creating ${NODE} VM: "
   --os-type linux --os-variant rhel7-unknown \
   --network network=${VIR_NET},model=virtio --noreboot --noautoconsole \
   --location rhcos-install/ \
-  --extra-args "nomodeset rd.neednet=1 coreos.inst=yes coreos.inst.install_dev=vda coreos.inst.image_url=http://${LBIP}:${WS_PORT}/${IMAGE} coreos.inst.ignition_url=http://${LBIP}:${WS_PORT}/worker.ign" > /dev/null || err "Creating ${NODE} vm failed "; ok
+  --extra-args "nomodeset rd.neednet=1 coreos.inst=yes coreos.inst.install_dev=vda coreos.live.rootfs_url=http://${LBIP}:${WS_PORT}/${IMAGE} coreos.inst.ignition_url=http://${LBIP}:${WS_PORT}/${ROLE}.ign" > /dev/null || err "Creating worker-${i} vm failed "; ok
 
 echo "====> Waiting for RHCOS Installation to finish: "
 while rvms=$(virsh list --name | grep "${CLUSTER_NAME}-${NODE}" 2> /dev/null); do
