@@ -192,7 +192,7 @@ test -z "$CLUSTER_NAME" && CLUSTER_NAME="ocp4"
 test -z "$BASE_DOM" && BASE_DOM="local"
 test -z "$DNS_DIR" && DNS_DIR="/etc/NetworkManager/dnsmasq.d"
 test -z "$VM_DIR" && VM_DIR="/var/lib/libvirt/images"
-test -z "$SETUP_DIR" && SETUP_DIR="/vms/clusters/ocp4_setup_${CLUSTER_NAME}"
+test -z "$SETUP_DIR" && SETUP_DIR="/vms/clusters/${CLUSTER_NAME}"
 test -z "$CACHE_DIR" && CACHE_DIR="/root/ocp4_downloads" && mkdir -p "$CACHE_DIR"
 test -z "$PULL_SEC_F" && PULL_SEC_F="/root/pull-secret"; PULL_SEC=$(cat "$PULL_SEC_F")
 
