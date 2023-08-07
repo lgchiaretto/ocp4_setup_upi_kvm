@@ -179,11 +179,11 @@ test -z "$OCP_VERSION" && OCP_VERSION="stable"
 test -z "$N_MAST" && N_MAST="3"
 test -z "$N_WORK" && N_WORK="2"
 test -z "$MAS_CPU" && MAS_CPU="4"
-test -z "$MAS_MEM" && MAS_MEM="16000"
+test -z "$MAS_MEM" && MAS_MEM="12000"
 test -z "$WOR_CPU" && WOR_CPU="2"
 test -z "$WOR_MEM" && WOR_MEM="8000"
 test -z "$BTS_CPU" && BTS_CPU="4"
-test -z "$BTS_MEM" && BTS_MEM="16000"
+test -z "$BTS_MEM" && BTS_MEM="12000"
 test -z "$LB_CPU" && LB_CPU="1"
 test -z "$LB_MEM" && LB_MEM="1024"
 test -z "$VIR_NET" -a -z "$VIR_NET_OCT" && VIR_NET="default"
@@ -374,12 +374,12 @@ if [ "$CLEANUP" == "yes" ]; then
 
     for vm in $(virsh list --all --name | grep "${CLUSTER_NAME}-lb\|${CLUSTER_NAME}-master-\|${CLUSTER_NAME}-worker-\|${CLUSTER_NAME}-bootstrap"); do
         check_if_we_can_continue "Deleting VM $vm"
-        MAC=$(virsh domiflist "$vm" | grep network | awk '{print $5}')
-        DHCP_LEASE=$(virsh net-dumpxml ${VIR_NET} | grep '<host ' | grep "$MAC" | sed 's/^[ ]*//')
-        echo -n "XXXX> Deleting DHCP reservation for VM $vm: "
-            virsh net-update ${VIR_NET} delete ip-dhcp-host --xml "$DHCP_LEASE" --live --config &> /dev/null || \
-                echo -n "dhcp reservation delete failed (ignoring) ... "
-            ok
+        # MAC=$(virsh domiflist "$vm" | grep network | awk '{print $5}')
+        # DHCP_LEASE=$(virsh net-dumpxml ${VIR_NET} | grep '<host ' | grep "$MAC" | sed 's/^[ ]*//')
+        # echo -n "XXXX> Deleting DHCP reservation for VM $vm: "
+        #     virsh net-update ${VIR_NET} delete ip-dhcp-host --xml "$DHCP_LEASE" --live --config &> /dev/null || \
+        #         echo -n "dhcp reservation delete failed (ignoring) ... "
+        #     ok
         echo -n "XXXX> Deleting VM $vm: "
             virsh destroy "$vm" &> /dev/null || echo -n "stopping vm failed (ignoring) ... "
             virsh undefine "$vm" --remove-all-storage &> /dev/null || echo -n "deleting vm failed (ignoring) ... "
@@ -447,15 +447,16 @@ else
     fi
 fi
 echo -n "====> Looking up OCP4 client for release $urldir: "
-CLIENT=$(curl -N --fail -qs "${OCP_MIRROR}/${urldir}/" | grep  -m1 "client-linux" | sed 's/.*href="\(openshift-.*\)">open.*/\1/')
+CLIENT=$(curl -N --fail -qs "${OCP_MIRROR}/${urldir}/" | grep  -m1 "client-linux" | grep  -m1 "client-linux" | sed -e 's/<a .*href=['"'"'"]//' -e 's/["'"'"'].*$//' -e 's/ //g')
     test -n "$CLIENT" || err "No client found in ${OCP_MIRROR}/${urldir}/"; ok "$CLIENT"
 CLIENT_URL="${OCP_MIRROR}/${urldir}/${CLIENT}"
 echo -n "====> Checking if Client URL is downloadable: "; download check "$CLIENT" "$CLIENT_URL";
 
 echo -n "====> Looking up OCP4 installer for release $urldir: "
-INSTALLER=$(curl -N --fail -qs "${OCP_MIRROR}/${urldir}/" | grep  -m1 "install-linux" | sed 's/.*href="\(openshift-.*\)">open.*/\1/')
+INSTALLER=$(curl -N --fail -qs "${OCP_MIRROR}/${urldir}/" | grep  -m1 "install-linux" | sed -e 's/<a .*href=['"'"'"]//' -e 's/["'"'"'].*$//' -e 's/ //g')
     test -n "$INSTALLER" || err "No installer found in ${OCP_MIRROR}/${urldir}/"; ok "$INSTALLER"
 INSTALLER_URL="${OCP_MIRROR}/${urldir}/${INSTALLER}"
+echo $INSTALLER_URL
 echo -n "====> Checking if Installer URL is downloadable: ";  download check "$INSTALLER" "$INSTALLER_URL";
 
 OCP_NORMALIZED_VER=$(echo "${INSTALLER}" | sed 's/.*-\(4\..*\)\.tar.*/\1/' )
@@ -479,13 +480,13 @@ else
 fi
 
 echo -n "====> Looking up RHCOS kernel for release $RHCOS_VER/$urldir: "
-KERNEL=$(curl -N --fail -qs "${RHCOS_MIRROR}/${RHCOS_VER}/${urldir}/" | grep -m1 "installer-kernel\|live-kernel" | sed 's/.*href="\(rhcos-.*\)">rhcos.*/\1/')
+KERNEL=$(curl -N --fail -qs "${RHCOS_MIRROR}/${RHCOS_VER}/${urldir}/" | grep -m1 "installer-kernel\|live-kernel" | sed -e 's/<a .*href=['"'"'"]//' -e 's/["'"'"'].*$//' -e 's/ //g')
     test -n "$KERNEL" || err "No kernel found in ${RHCOS_MIRROR}/${RHCOS_VER}/${urldir}/"; ok "$KERNEL"
 KERNEL_URL="${RHCOS_MIRROR}/${RHCOS_VER}/${urldir}/${KERNEL}"
 echo -n "====> Checking if Kernel URL is downloadable: "; download check "$KERNEL" "$KERNEL_URL";
 
 echo -n "====> Looking up RHCOS initramfs for release $RHCOS_VER/$urldir: "
-INITRAMFS=$(curl -N --fail -qs ${RHCOS_MIRROR}/${RHCOS_VER}/${urldir}/ | grep -m1 "installer-initramfs\|live-initramfs" | sed 's/.*href="\(rhcos-.*\)">rhcos.*/\1/')
+INITRAMFS=$(curl -N --fail -qs ${RHCOS_MIRROR}/${RHCOS_VER}/${urldir}/ | grep -m1 "installer-initramfs\|live-initramfs" | sed -e 's/<a .*href=['"'"'"]//' -e 's/["'"'"'].*$//' -e 's/ //g')
     test -n "$INITRAMFS" || err "No initramfs found in ${RHCOS_MIRROR}/${RHCOS_VER}/${urldir}/"; ok "$INITRAMFS"
 INITRAMFS_URL="$RHCOS_MIRROR/${RHCOS_VER}/${urldir}/${INITRAMFS}"
 echo -n "====> Checking if Initramfs URL is downloadable: "; download check "$INITRAMFS" "$INITRAMFS_URL";
@@ -505,6 +506,7 @@ if [ -n "$RHCOS_LIVE" ]; then
 else
     IMAGE=$(curl -N --fail -qs ${RHCOS_MIRROR}/${RHCOS_VER}/${urldir}/ | grep -m1 "metal" | sed 's/.*href="\(rhcos-.*.raw.gz\)".*/\1/')
 fi
+
 test -n "$IMAGE" || err "No image found in ${RHCOS_MIRROR}/${RHCOS_VER}/${urldir}/"; ok "$IMAGE"
 IMAGE_URL="$RHCOS_MIRROR/${RHCOS_VER}/${urldir}/${IMAGE}"
 echo -n "====> Checking if Image URL is downloadable: "; download check "$IMAGE" "$IMAGE_URL";
@@ -699,7 +701,16 @@ platform:
   none: {}
 pullSecret: '${PULL_SEC}'
 sshKey: '$(cat $SSH_KEY_PUB)'
+imageContentSources:
+- mirrors:
+  - quay-local.chiaret.to:8443/ocp4/$OCP_VERSION
+  source: quay.io/openshift-release-dev/ocp-release
+- mirrors:
+  - quay-local.chiaret.to:8443/ocp4/$OCP_VERSION
+  source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
 EOF
+
+
 
 echo "====> Backup install-config"
 cp install_dir/install-config.yaml .
