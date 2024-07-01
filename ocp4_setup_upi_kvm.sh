@@ -177,9 +177,9 @@ done
 # Default Values
 test -z "$OCP_VERSION" && OCP_VERSION="stable"
 test -z "$N_MAST" && N_MAST="3"
-test -z "$N_WORK" && N_WORK="2"
-test -z "$MAS_CPU" && MAS_CPU="4"
-test -z "$MAS_MEM" && MAS_MEM="12000"
+test -z "$N_WORK" && N_WORK="0"
+test -z "$MAS_CPU" && MAS_CPU="8"
+test -z "$MAS_MEM" && MAS_MEM="32000"
 test -z "$WOR_CPU" && WOR_CPU="2"
 test -z "$WOR_MEM" && WOR_MEM="8000"
 test -z "$BTS_CPU" && BTS_CPU="4"
@@ -694,20 +694,13 @@ networking:
   clusterNetworks:
   - cidr: 10.128.0.0/14
     hostPrefix: 23
-  networkType: OpenShiftSDN
+  networkType: OVNKubernetes
   serviceNetwork:
   - 172.30.0.0/16
 platform:
   none: {}
 pullSecret: '${PULL_SEC}'
 sshKey: '$(cat $SSH_KEY_PUB)'
-imageContentSources:
-- mirrors:
-  - quay-local.chiaret.to:8443/ocp4/$OCP_VERSION
-  source: quay.io/openshift-release-dev/ocp-release
-- mirrors:
-  - quay-local.chiaret.to:8443/ocp4/$OCP_VERSION
-  source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
 EOF
 
 
